@@ -12,7 +12,7 @@ function App() {
   // Verileri Veritabanından Çek (READ)
   const verileriGetir = () => {
     axios
-      .get("http://localhost:5000/kitaplar")
+      .get("https://webaplicationdevproject.onrender.com/kitaplar")
       .then((res) => setKitaplar(res.data))
       .catch((err) => console.log(err));
   };
@@ -24,15 +24,19 @@ function App() {
   // Yeni Veri Ekle (CREATE)
   const kitapEkle = (e) => {
     e.preventDefault();
-    axios.post("http://localhost:5000/ekle", yeniKitap).then(() => {
-      verileriGetir(); // Listeyi güncelle
-      setYeniKitap({ kitap_adi: "", yazar: "", kategori_id: 1 });
-    });
+    axios
+      .post("https://webaplicationdevproject.onrender.com/ekle", yeniKitap)
+      .then(() => {
+        verileriGetir(); // Listeyi güncelle
+        setYeniKitap({ kitap_adi: "", yazar: "", kategori_id: 1 });
+      });
   };
 
   // Veri Sil (DELETE)
   const kitapSil = (id) => {
-    axios.delete(`http://localhost:5000/sil/${id}`).then(() => verileriGetir());
+    axios
+      .delete(`https://webaplicationdevproject.onrender.com/sil/${id}`)
+      .then(() => verileriGetir());
   };
 
   return (

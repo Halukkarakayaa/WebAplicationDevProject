@@ -8,10 +8,15 @@ app.use(express.json());
 
 // Veritabanı Bağlantısı
 const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "",
-  database: "wad-project",
+  host: "gateway01.eu-central-1.prod.aws.tidbcloud.com",
+  user: "4VsJKbW7Zhzmc1H.root",
+  password: "vhlUKb1tloz7Bh18",
+  database: "test",
+  port: 4000,
+  ssl: {
+    minVersion: "TLSv1.2",
+    rejectUnauthorized: true,
+  },
 });
 
 db.connect((err) => {
