@@ -34,7 +34,7 @@ db.connect((err) => {
 });
 // Kitapları Getir (GET)
 app.get("/kitaplar", (req, res) => {
-  // Kitapları kategorileriyle birlikte çekiyoruz
+  // LEFT JOIN kullanarak kitapları ve kategori isimlerini birleştiriyoruz
   const sql = `
         SELECT kitaplar.id, kitaplar.kitap_adi, kitaplar.yazar, kategoriler.kategori_adi 
         FROM kitaplar 
