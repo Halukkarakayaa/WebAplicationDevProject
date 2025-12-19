@@ -20,20 +20,18 @@ const db = mysql.createConnection({
   database: "test",
   port: 4000,
   ssl: {
-    minVersion: "TLSv1.2",
-    rejectUnauthorized: false, // Bağlantı sertifika hatalarını önler
+    rejectUnauthorized: false,
   },
 });
 
-// Hata ayıklama için bağlantı kontrolü
+// Sunucu kalktığında bağlantıyı test et
 db.connect((err) => {
   if (err) {
-    console.error("!!! VERİTABANI BAĞLANTI HATASI !!!:", err.message);
+    console.log("HATA: TiDB baglantisi kurulamadi ->", err.message);
   } else {
-    console.log("Bulut Veritabanına Başarıyla Bağlanıldı!");
+    console.log("TEBRİKLER: Bulut veritabanina erisim saglandi!");
   }
 });
-
 // Kitapları Getir (GET)
 app.get("/kitaplar", (req, res) => {
   // Önce en basit sorguyla test edelim
