@@ -12,6 +12,7 @@ app.use(
 app.use(express.json());
 
 // Veritabanı Bağlantısı
+// Veritabanı bağlantısı
 const db = mysql.createConnection({
   host: "gateway01.eu-central-1.prod.aws.tidbcloud.com",
   user: "4VsJKbW7Zhzmc1H.root",
@@ -20,27 +21,28 @@ const db = mysql.createConnection({
   port: 4000,
   ssl: {
     minVersion: "TLSv1.2",
-    rejectUnauthorized: false, // Bu ayar bağlantı hatalarını genellikle çözer
+    rejectUnauthorized: false, // Bağlantı sertifika hatalarını önler
   },
 });
 
+// Hata ayıklama için bağlantı kontrolü
 db.connect((err) => {
   if (err) {
-    console.error("MySQL Bağlantı Hatası:", err);
+    console.error("!!! VERİTABANI BAĞLANTI HATASI !!!:", err.message);
   } else {
-    console.log("MySQL Bağlantısı Başarılı!");
+    console.log("Bulut Veritabanına Başarıyla Bağlanıldı!");
   }
 });
 
-// Kitapları Listeleme Rotası
+// Kitapları Getir (GET)
 app.get("/kitaplar", (req, res) => {
-  // Karmaşık JOIN yerine önce sadece kitapları çekmeyi deneyelim
+  // Önce en basit sorguyla test edelim
   db.query("SELECT * FROM kitaplar", (err, result) => {
     if (err) {
-      console.error("DETAYLI HATA:", err); // Bu log Render terminaline düşer
-      return res.status(500).json({ error: err.message });
+      console.error("Sorgu Hatası (GET):", err.message); // Bu mesaj Render terminaline düşecek
+      return res.status(500).send(err);
     }
-    res.json(result);
+    res.send(result);
   });
 });
 
