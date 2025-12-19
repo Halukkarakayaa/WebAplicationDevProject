@@ -34,13 +34,18 @@ db.connect((err) => {
 });
 // Kitapları Getir (GET)
 app.get("/kitaplar", (req, res) => {
-  // Önce en basit sorguyla test edelim
-  db.query("SELECT * FROM kitaplar", (err, result) => {
+  // Kitapları kategorileriyle birlikte çekiyoruz
+  const sql = `
+        SELECT kitaplar.id, kitaplar.kitap_adi, kitaplar.yazar, kategoriler.kategori_adi 
+        FROM kitaplar 
+        LEFT JOIN kategoriler ON kitaplar.kategori_id = kategoriler.id
+    `;
+  db.query(sql, (err, result) => {
     if (err) {
-      console.error("Sorgu Hatası (GET):", err.message); // Bu mesaj Render terminaline düşecek
-      return res.status(500).send(err);
+      console.error("Veritabanı hatası:", err);
+      return res.status(500).json({ error: err.message });
     }
-    res.send(result);
+    res.json(result);
   });
 });
 
