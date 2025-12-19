@@ -34,14 +34,18 @@ db.connect((err) => {
 
 // Kitapları Listeleme Rotası
 app.get("/kitaplar", (req, res) => {
+  // Kitaplar ile kategorileri birleştirerek isimleri alıyoruz
   const sql = `
-        SELECT kitaplar.*, kategoriler.kategori_adi 
+        SELECT kitaplar.id, kitaplar.kitap_adi, kitaplar.yazar, kategoriler.kategori_adi 
         FROM kitaplar 
-        LEFT JOIN kategoriler ON kitaplar.kategori_id = kategoriler.id
+        JOIN kategoriler ON kitaplar.kategori_id = kategoriler.id
     `;
   db.query(sql, (err, result) => {
-    if (err) return res.status(500).json(err);
-    return res.json(result);
+    if (err) {
+      console.error("Hata:", err);
+      return res.status(500).send(err);
+    }
+    res.send(result);
   });
 });
 
