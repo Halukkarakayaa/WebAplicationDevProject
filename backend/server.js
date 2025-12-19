@@ -20,7 +20,7 @@ const db = mysql.createConnection({
   port: 4000,
   ssl: {
     minVersion: "TLSv1.2",
-    rejectUnauthorized: true,
+    rejectUnauthorized: false, // Bu ayar bağlantı hatalarını genellikle çözer
   },
 });
 
@@ -34,18 +34,13 @@ db.connect((err) => {
 
 // Kitapları Listeleme Rotası
 app.get("/kitaplar", (req, res) => {
-  // Kitaplar ile kategorileri birleştirerek isimleri alıyoruz
-  const sql = `
-        SELECT kitaplar.id, kitaplar.kitap_adi, kitaplar.yazar, kategoriler.kategori_adi 
-        FROM kitaplar 
-        JOIN kategoriler ON kitaplar.kategori_id = kategoriler.id
-    `;
-  db.query(sql, (err, result) => {
+  // Karmaşık JOIN yerine önce sadece kitapları çekmeyi deneyelim
+  db.query("SELECT * FROM kitaplar", (err, result) => {
     if (err) {
-      console.error("Hata:", err);
-      return res.status(500).send(err);
+      console.error("DETAYLI HATA:", err); // Bu log Render terminaline düşer
+      return res.status(500).json({ error: err.message });
     }
-    res.send(result);
+    res.json(result);
   });
 });
 
