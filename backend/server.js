@@ -3,7 +3,12 @@ const mysql = require("mysql2");
 const cors = require("cors");
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: "*", // Her yerden gelen isteğe izin ver
+    methods: ["GET", "POST", "DELETE"],
+  })
+);
 app.use(express.json());
 
 // Veritabanı Bağlantısı
