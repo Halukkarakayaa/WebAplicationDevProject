@@ -4,13 +4,18 @@ import { useNavigate } from "react-router-dom";
 
 const Admin = () => {
   const [kitaplar, setKitaplar] = useState([]);
+
+  // Yeni kitap ekleme state'i
   const [yeniKitap, setYeniKitap] = useState({
     kitap_adi: "",
     yazar: "",
     kategori_id: 1,
-    sayfa_sayisi: "", // Yeni alan
-    ozet: "", // Yeni alan
+    sayfa_sayisi: "",
+    ozet: "",
   });
+
+  // Düzenleme işlemi için seçilen kitap (Boşsa modal kapalı demektir)
+  const [duzenlenecekKitap, setDuzenlenecekKitap] = useState(null);
 
   const navigate = useNavigate();
   const API_URL = "https://webaplicationdevproject.onrender.com";
@@ -28,19 +33,20 @@ const Admin = () => {
     }
   };
 
+  // --- EKLEME İŞLEMLERİ ---
   const handleChange = (e) => {
-    setYeniKitap({ ...yeniKitap, [e.target.name]: e.target.value });
+    const value =
+      e.target.name === "kategori_id" || e.target.name === "sayfa_sayisi"
+        ? Number(e.target.value)
+        : e.target.value;
+    setYeniKitap({ ...yeniKitap, [e.target.name]: value });
   };
 
   const handleEkle = async () => {
-    if (!yeniKitap.kitap_adi || !yeniKitap.yazar) {
-      alert("Lütfen en az kitap adı ve yazar giriniz!");
-      return;
-    }
+    if (!yeniKitap.kitap_adi || !yeniKitap.yazar) return alert("Eksik bilgi!");
     try {
       await axios.post(`${API_URL}/ekle`, yeniKitap);
       fetchKitaplar();
-      // Formu sıfırla
       setYeniKitap({
         kitap_adi: "",
         yazar: "",
@@ -53,6 +59,7 @@ const Admin = () => {
     }
   };
 
+  // --- SİLME İŞLEMİ ---
   const handleSil = async (id) => {
     if (window.confirm("Silmek istediğine emin misin?")) {
       await axios.delete(`${API_URL}/sil/${id}`);
@@ -60,8 +67,140 @@ const Admin = () => {
     }
   };
 
+  // --- DÜZENLEME (UPDATE) İŞLEMLERİ ---
+
+  // 1. Düzenle butonuna basınca modalı aç ve verileri doldur
+  const handleDuzenleClick = (kitap) => {
+    setDuzenlenecekKitap(kitap);
+  };
+
+  // 2. Modal içindeki inputlar değişince state'i güncelle
+  const handleEditChange = (e) => {
+    const value =
+      e.target.name === "kategori_id" || e.target.name === "sayfa_sayisi"
+        ? Number(e.target.value)
+        : e.target.value;
+    setDuzenlenecekKitap({ ...duzenlenecekKitap, [e.target.name]: value });
+  };
+
+  // 3. Kaydet butonuna basınca sunucuya gönder
+  const handleGuncelle = async () => {
+    try {
+      await axios.put(
+        `${API_URL}/guncelle/${duzenlenecekKitap.id}`,
+        duzenlenecekKitap
+      );
+      alert("Kitap başarıyla güncellendi!");
+      setDuzenlenecekKitap(null); // Modalı kapat
+      fetchKitaplar(); // Listeyi yenile
+    } catch (error) {
+      console.log("Güncelleme hatası:", error);
+      alert("Güncelleme sırasında bir hata oluştu.");
+    }
+  };
+
   return (
     <div className="container mt-5 pb-5">
+      {/* MODAL STİLLERİ */}
+      <style>
+        {`
+          .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6); z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+          }
+          .modal-box {
+            background: white; padding: 30px; border-radius: 15px; width: 500px;
+            box-shadow: 0 5px 30px rgba(0,0,0,0.3);
+            border-top: 10px solid #ffc107; /* Sarı renk (Düzenleme için) */
+          }
+        `}
+      </style>
+
+      {/* --- DÜZENLEME MODALI --- */}
+      {duzenlenecekKitap && (
+        <div className="modal-overlay">
+          <div className="modal-box">
+            <h3 className="mb-4 text-warning fw-bold">Kitabı Düzenle</h3>
+
+            <div className="mb-3">
+              <label className="form-label">Kitap Adı</label>
+              <input
+                type="text"
+                name="kitap_adi"
+                className="form-control"
+                value={duzenlenecekKitap.kitap_adi}
+                onChange={handleEditChange}
+              />
+            </div>
+
+            <div className="row mb-3">
+              <div className="col">
+                <label className="form-label">Yazar</label>
+                <input
+                  type="text"
+                  name="yazar"
+                  className="form-control"
+                  value={duzenlenecekKitap.yazar}
+                  onChange={handleEditChange}
+                />
+              </div>
+              <div className="col">
+                <label className="form-label">Sayfa Sayısı</label>
+                <input
+                  type="number"
+                  name="sayfa_sayisi"
+                  className="form-control"
+                  value={duzenlenecekKitap.sayfa_sayisi}
+                  onChange={handleEditChange}
+                />
+              </div>
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Kategori</label>
+              <select
+                name="kategori_id"
+                className="form-select"
+                value={duzenlenecekKitap.kategori_id}
+                onChange={handleEditChange}
+              >
+                <option value={1}>Tarih</option>
+                <option value={2}>Yazılım</option>
+                <option value={3}>Roman</option>
+              </select>
+            </div>
+
+            <div className="mb-3">
+              <label className="form-label">Özet</label>
+              <textarea
+                name="ozet"
+                className="form-control"
+                rows="4"
+                value={duzenlenecekKitap.ozet}
+                onChange={handleEditChange}
+              ></textarea>
+            </div>
+
+            <div className="d-flex justify-content-end gap-2">
+              <button
+                onClick={() => setDuzenlenecekKitap(null)}
+                className="btn btn-secondary"
+              >
+                İptal
+              </button>
+              <button
+                onClick={handleGuncelle}
+                className="btn btn-warning text-dark fw-bold"
+              >
+                Değişiklikleri Kaydet
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ÜST PANEL */}
       <div className="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded shadow-sm">
         <h2 className="mb-0 text-primary">📚 Yönetim Paneli</h2>
         <button
@@ -72,7 +211,7 @@ const Admin = () => {
         </button>
       </div>
 
-      {/* GELİŞMİŞ EKLEME FORMU */}
+      {/* EKLEME FORMU */}
       <div className="card p-4 mb-4 shadow-sm border-0">
         <h5 className="mb-3">Yeni Kitap Ekle</h5>
         <div className="row g-2">
@@ -113,9 +252,9 @@ const Admin = () => {
               value={yeniKitap.kategori_id}
               onChange={handleChange}
             >
-              <option value="1">Tarih</option>
-              <option value="2">Yazılım</option>
-              <option value="3">Roman</option>
+              <option value={1}>Tarih</option>
+              <option value={2}>Yazılım</option>
+              <option value={3}>Roman</option>
             </select>
           </div>
           <div className="col-md-12">
@@ -162,6 +301,13 @@ const Admin = () => {
                   </span>
                 </td>
                 <td>
+                  {/* YENİ BUTONLAR */}
+                  <button
+                    onClick={() => handleDuzenleClick(kitap)}
+                    className="btn btn-warning btn-sm me-2"
+                  >
+                    Düzenle
+                  </button>
                   <button
                     onClick={() => handleSil(kitap.id)}
                     className="btn btn-danger btn-sm"

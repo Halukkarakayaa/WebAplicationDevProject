@@ -3,14 +3,13 @@ const mysql = require("mysql2");
 const cors = require("cors");
 
 const app = express();
-app.use(cors({ origin: "*", methods: ["GET", "POST", "DELETE"] }));
+app.use(cors({ origin: "*", methods: ["GET", "POST", "DELETE", "PUT"] })); // PUT eklendi
 app.use(express.json());
 
-// Veritabanı Konfigürasyonu
 const dbConfig = {
-  host: "gateway01.eu-central-1.prod.aws.tidbcloud.com", // Senin hostun
-  user: "4VsJKbW7Zhzmc1H.root", // Senin kullanıcı adın
-  password: "vhlUKb1tloz7Bh18", // Senin şifren
+  host: "gateway01.eu-central-1.prod.aws.tidbcloud.com",
+  user: "4VsJKbW7Zhzmc1H.root",
+  password: "vhlUKb1tloz7Bh18",
   database: "test",
   port: 4000,
   ssl: { rejectUnauthorized: false },
@@ -45,7 +44,7 @@ app.post("/login", (req, res) => {
       res.json({
         success: true,
         message: "Giriş Başarılı",
-        user: { id: user.id, name: user.name, username: user.username },
+        user: { id: user.id, name: user.name },
       });
     } else {
       res.status(401).json({ success: false, message: "Hatalı giriş!" });
@@ -53,7 +52,7 @@ app.post("/login", (req, res) => {
   });
 });
 
-// GET - Kitapları Getir (Yeni sütunlar dahil)
+// GET - Kitapları Getir
 app.get("/kitaplar", (req, res) => {
   const sql = `
         SELECT kitaplar.*, kategoriler.kategori_adi 
@@ -66,11 +65,10 @@ app.get("/kitaplar", (req, res) => {
   });
 });
 
-// POST - Kitap Ekle (Özet ve Sayfa Sayısı eklendi)
+// POST - Kitap Ekle
 app.post("/ekle", (req, res) => {
   const sql =
     "INSERT INTO kitaplar (kitap_adi, yazar, kategori_id, sayfa_sayisi, ozet) VALUES (?)";
-  // Verileri sırasıyla dizi içine koyuyoruz
   const values = [
     req.body.kitap_adi,
     req.body.yazar,
@@ -78,10 +76,28 @@ app.post("/ekle", (req, res) => {
     req.body.sayfa_sayisi,
     req.body.ozet,
   ];
-
   db.query(sql, [values], (err, data) => {
     if (err) return res.status(500).json(err);
     return res.json("Başarıyla eklendi");
+  });
+});
+
+// PUT - Kitap Güncelle (YENİ EKLENEN KISIM)
+app.put("/guncelle/:id", (req, res) => {
+  const id = req.params.id;
+  const sql =
+    "UPDATE kitaplar SET kitap_adi = ?, yazar = ?, kategori_id = ?, sayfa_sayisi = ?, ozet = ? WHERE id = ?";
+  const values = [
+    req.body.kitap_adi,
+    req.body.yazar,
+    req.body.kategori_id,
+    req.body.sayfa_sayisi,
+    req.body.ozet,
+    id,
+  ];
+  db.query(sql, values, (err, result) => {
+    if (err) return res.status(500).json(err);
+    return res.json("Güncellendi");
   });
 });
 
