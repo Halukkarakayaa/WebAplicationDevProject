@@ -25,27 +25,23 @@ const dbConfig = {
 
 let db;
 
-// Bağlantıyı yöneten fonksiyon (Hata durumunda otomatik yeniden bağlanır)
+// Bağlantıyı yöneten fonksiyon
 function handleDisconnect() {
   db = mysql.createConnection(dbConfig);
 
   db.connect((err) => {
     if (err) {
-      console.log(
-        "HATA: TiDB baglantisi kurulamadi, 2 saniye sonra tekrar denenecek ->",
-        err.message
-      );
-      setTimeout(handleDisconnect, 2000); // Hata varsa 2 saniye sonra tekrar dene
+      console.log("HATA: TiDB baglantisi kurulamadi ->", err.message);
+      setTimeout(handleDisconnect, 2000);
     } else {
       console.log("TEBRİKLER: Bulut veritabanina erisim saglandi!");
     }
   });
 
   db.on("error", (err) => {
-    console.log("Veritabanı hatası (db error):", err);
+    console.log("Veritabanı hatası:", err);
     if (err.code === "PROTOCOL_CONNECTION_LOST" || err.code === "ECONNRESET") {
-      console.log("Bağlantı koptu, yeniden bağlanılıyor...");
-      handleDisconnect(); // Bağlantı koptuğunda fonksiyonu tekrar çalıştır
+      handleDisconnect();
     } else {
       throw err;
     }
@@ -54,7 +50,37 @@ function handleDisconnect() {
 
 handleDisconnect();
 
-// Kitapları Getir (GET)
+// --- YENİ EKLENEN KISIM: GİRİŞ (LOGIN) API ---
+app.post("/login", (req, res) => {
+  const { username, password } = req.body;
+
+  // Veritabanında bu kullanıcı adı ve şifreye sahip biri var mı?
+  const sql = "SELECT * FROM users WHERE username = ? AND password = ?";
+
+  db.query(sql, [username, password], (err, result) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    if (result.length > 0) {
+      // Kullanıcı bulundu!
+      const user = result[0];
+      res.json({
+        success: true,
+        message: "Giriş Başarılı",
+        user: { id: user.id, name: user.name, username: user.username }, // Şifreyi geri göndermiyoruz, güvenlik için.
+      });
+    } else {
+      // Eşleşme yok
+      res
+        .status(401)
+        .json({ success: false, message: "Kullanıcı adı veya şifre hatalı!" });
+    }
+  });
+});
+// ----------------------------------------------
+
+// Kitapları Getir
 app.get("/kitaplar", (req, res) => {
   const sql = `
         SELECT kitaplar.id, kitaplar.kitap_adi, kitaplar.yazar, kategoriler.kategori_adi 
@@ -62,15 +88,12 @@ app.get("/kitaplar", (req, res) => {
         LEFT JOIN kategoriler ON kitaplar.kategori_id = kategoriler.id
     `;
   db.query(sql, (err, result) => {
-    if (err) {
-      console.error("Veritabanı hatası:", err);
-      return res.status(500).json({ error: err.message });
-    }
+    if (err) return res.status(500).json({ error: err.message });
     res.json(result);
   });
 });
 
-// Kitap Ekleme Rotası
+// Kitap Ekle
 app.post("/ekle", (req, res) => {
   const sql = "INSERT INTO kitaplar (kitap_adi, yazar, kategori_id) VALUES (?)";
   const values = [req.body.kitap_adi, req.body.yazar, req.body.kategori_id];
@@ -80,7 +103,7 @@ app.post("/ekle", (req, res) => {
   });
 });
 
-// Kitap Silme Rotası
+// Kitap Sil
 app.delete("/sil/:id", (req, res) => {
   const id = req.params.id;
   db.query("DELETE FROM kitaplar WHERE id = ?", [id], (err, data) => {
