@@ -5,15 +5,14 @@ const cors = require("cors");
 const app = express();
 app.use(
   cors({
-    origin: "*", // Her yerden gelen isteğe izin ver
+    origin: "*",
     methods: ["GET", "POST", "DELETE"],
   })
 );
 app.use(express.json());
 
-// Veritabanı Bağlantısı
-// Veritabanı bağlantısı
-const db = mysql.createConnection({
+// Veritabanı Konfigürasyonu
+const dbConfig = {
   host: "gateway01.eu-central-1.prod.aws.tidbcloud.com",
   user: "4VsJKbW7Zhzmc1H.root",
   password: "vhlUKb1tloz7Bh18",
@@ -22,19 +21,41 @@ const db = mysql.createConnection({
   ssl: {
     rejectUnauthorized: false,
   },
-});
+};
 
-// Sunucu kalktığında bağlantıyı test et
-db.connect((err) => {
-  if (err) {
-    console.log("HATA: TiDB baglantisi kurulamadi ->", err.message);
-  } else {
-    console.log("TEBRİKLER: Bulut veritabanina erisim saglandi!");
-  }
-});
+let db;
+
+// Bağlantıyı yöneten fonksiyon (Hata durumunda otomatik yeniden bağlanır)
+function handleDisconnect() {
+  db = mysql.createConnection(dbConfig);
+
+  db.connect((err) => {
+    if (err) {
+      console.log(
+        "HATA: TiDB baglantisi kurulamadi, 2 saniye sonra tekrar denenecek ->",
+        err.message
+      );
+      setTimeout(handleDisconnect, 2000); // Hata varsa 2 saniye sonra tekrar dene
+    } else {
+      console.log("TEBRİKLER: Bulut veritabanina erisim saglandi!");
+    }
+  });
+
+  db.on("error", (err) => {
+    console.log("Veritabanı hatası (db error):", err);
+    if (err.code === "PROTOCOL_CONNECTION_LOST" || err.code === "ECONNRESET") {
+      console.log("Bağlantı koptu, yeniden bağlanılıyor...");
+      handleDisconnect(); // Bağlantı koptuğunda fonksiyonu tekrar çalıştır
+    } else {
+      throw err;
+    }
+  });
+}
+
+handleDisconnect();
+
 // Kitapları Getir (GET)
 app.get("/kitaplar", (req, res) => {
-  // LEFT JOIN kullanarak kitapları ve kategori isimlerini birleştiriyoruz
   const sql = `
         SELECT kitaplar.id, kitaplar.kitap_adi, kitaplar.yazar, kategoriler.kategori_adi 
         FROM kitaplar 
@@ -68,6 +89,7 @@ app.delete("/sil/:id", (req, res) => {
   });
 });
 
-app.listen(5000, () => {
-  console.log("Backend 5000 portunda hazır.");
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Backend ${PORT} portunda hazır.`);
 });
