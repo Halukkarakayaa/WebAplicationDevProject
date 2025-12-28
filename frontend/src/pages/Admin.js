@@ -5,18 +5,17 @@ import { useNavigate } from "react-router-dom";
 const Admin = () => {
   const [kitaplar, setKitaplar] = useState([]);
 
-  // Yeni kitap ekleme state'i
+  // State'e 'kutuphane' alanını ekledik
   const [yeniKitap, setYeniKitap] = useState({
     kitap_adi: "",
     yazar: "",
     kategori_id: 1,
     sayfa_sayisi: "",
     ozet: "",
+    kutuphane: "",
   });
 
-  // Düzenleme işlemi için seçilen kitap (Boşsa modal kapalı demektir)
   const [duzenlenecekKitap, setDuzenlenecekKitap] = useState(null);
-
   const navigate = useNavigate();
   const API_URL = "https://webaplicationdevproject.onrender.com";
 
@@ -33,7 +32,6 @@ const Admin = () => {
     }
   };
 
-  // --- EKLEME İŞLEMLERİ ---
   const handleChange = (e) => {
     const value =
       e.target.name === "kategori_id" || e.target.name === "sayfa_sayisi"
@@ -53,13 +51,13 @@ const Admin = () => {
         kategori_id: 1,
         sayfa_sayisi: "",
         ozet: "",
+        kutuphane: "",
       });
     } catch (err) {
       alert("Hata oluştu");
     }
   };
 
-  // --- SİLME İŞLEMİ ---
   const handleSil = async (id) => {
     if (window.confirm("Silmek istediğine emin misin?")) {
       await axios.delete(`${API_URL}/sil/${id}`);
@@ -67,14 +65,10 @@ const Admin = () => {
     }
   };
 
-  // --- DÜZENLEME (UPDATE) İŞLEMLERİ ---
-
-  // 1. Düzenle butonuna basınca modalı aç ve verileri doldur
   const handleDuzenleClick = (kitap) => {
     setDuzenlenecekKitap(kitap);
   };
 
-  // 2. Modal içindeki inputlar değişince state'i güncelle
   const handleEditChange = (e) => {
     const value =
       e.target.name === "kategori_id" || e.target.name === "sayfa_sayisi"
@@ -83,7 +77,6 @@ const Admin = () => {
     setDuzenlenecekKitap({ ...duzenlenecekKitap, [e.target.name]: value });
   };
 
-  // 3. Kaydet butonuna basınca sunucuya gönder
   const handleGuncelle = async () => {
     try {
       await axios.put(
@@ -91,17 +84,15 @@ const Admin = () => {
         duzenlenecekKitap
       );
       alert("Kitap başarıyla güncellendi!");
-      setDuzenlenecekKitap(null); // Modalı kapat
-      fetchKitaplar(); // Listeyi yenile
+      setDuzenlenecekKitap(null);
+      fetchKitaplar();
     } catch (error) {
-      console.log("Güncelleme hatası:", error);
       alert("Güncelleme sırasında bir hata oluştu.");
     }
   };
 
   return (
     <div className="container mt-5 pb-5">
-      {/* MODAL STİLLERİ */}
       <style>
         {`
           .modal-overlay {
@@ -112,7 +103,7 @@ const Admin = () => {
           .modal-box {
             background: white; padding: 30px; border-radius: 15px; width: 500px;
             box-shadow: 0 5px 30px rgba(0,0,0,0.3);
-            border-top: 10px solid #ffc107; /* Sarı renk (Düzenleme için) */
+            border-top: 10px solid #ffc107;
           }
         `}
       </style>
@@ -158,6 +149,18 @@ const Admin = () => {
             </div>
 
             <div className="mb-3">
+              <label className="form-label">Konum / Kütüphane</label>
+              <input
+                type="text"
+                name="kutuphane"
+                className="form-control"
+                placeholder="Örn: Merkez Kütüphane, Raf A5"
+                value={duzenlenecekKitap.kutuphane || ""}
+                onChange={handleEditChange}
+              />
+            </div>
+
+            <div className="mb-3">
               <label className="form-label">Kategori</label>
               <select
                 name="kategori_id"
@@ -176,8 +179,8 @@ const Admin = () => {
               <textarea
                 name="ozet"
                 className="form-control"
-                rows="4"
-                value={duzenlenecekKitap.ozet}
+                rows="3"
+                value={duzenlenecekKitap.ozet || ""}
                 onChange={handleEditChange}
               ></textarea>
             </div>
@@ -235,6 +238,7 @@ const Admin = () => {
               onChange={handleChange}
             />
           </div>
+
           <div className="col-md-4">
             <input
               type="number"
@@ -242,6 +246,17 @@ const Admin = () => {
               className="form-control"
               placeholder="Sayfa Sayısı"
               value={yeniKitap.sayfa_sayisi}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="col-md-4">
+            {/* YENİ ALAN: Kütüphane */}
+            <input
+              type="text"
+              name="kutuphane"
+              className="form-control"
+              placeholder="Kütüphane / Raf Bilgisi"
+              value={yeniKitap.kutuphane}
               onChange={handleChange}
             />
           </div>
@@ -257,6 +272,7 @@ const Admin = () => {
               <option value={3}>Roman</option>
             </select>
           </div>
+
           <div className="col-md-12">
             <textarea
               name="ozet"
@@ -283,7 +299,7 @@ const Admin = () => {
               <th>ID</th>
               <th>Kitap Adı</th>
               <th>Yazar</th>
-              <th>Sayfa</th>
+              <th>Konum</th> {/* Yeni Başlık */}
               <th>Kategori</th>
               <th>İşlem</th>
             </tr>
@@ -294,14 +310,15 @@ const Admin = () => {
                 <td>{kitap.id}</td>
                 <td>{kitap.kitap_adi}</td>
                 <td>{kitap.yazar}</td>
-                <td>{kitap.sayfa_sayisi || "-"}</td>
+                <td>
+                  <small className="text-muted">{kitap.kutuphane || "-"}</small>
+                </td>
                 <td>
                   <span className="badge bg-info text-dark">
                     {kitap.kategori_adi}
                   </span>
                 </td>
                 <td>
-                  {/* YENİ BUTONLAR */}
                   <button
                     onClick={() => handleDuzenleClick(kitap)}
                     className="btn btn-warning btn-sm me-2"

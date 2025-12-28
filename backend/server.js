@@ -3,13 +3,13 @@ const mysql = require("mysql2");
 const cors = require("cors");
 
 const app = express();
-app.use(cors({ origin: "*", methods: ["GET", "POST", "DELETE", "PUT"] })); // PUT eklendi
+app.use(cors({ origin: "*", methods: ["GET", "POST", "DELETE", "PUT"] }));
 app.use(express.json());
 
 const dbConfig = {
-  host: "gateway01.eu-central-1.prod.aws.tidbcloud.com",
-  user: "4VsJKbW7Zhzmc1H.root",
-  password: "vhlUKb1tloz7Bh18",
+  host: "gateway01.eu-central-1.prod.aws.tidbcloud.com", // Kendi hostun
+  user: "4VsJKbW7Zhzmc1H.root", // Kendi userin
+  password: "vhlUKb1tloz7Bh18", // Kendi şifren
   database: "test",
   port: 4000,
   ssl: { rejectUnauthorized: false },
@@ -65,16 +65,17 @@ app.get("/kitaplar", (req, res) => {
   });
 });
 
-// POST - Kitap Ekle
+// POST - Kitap Ekle (KÜTÜPHANE EKLENDİ)
 app.post("/ekle", (req, res) => {
   const sql =
-    "INSERT INTO kitaplar (kitap_adi, yazar, kategori_id, sayfa_sayisi, ozet) VALUES (?)";
+    "INSERT INTO kitaplar (kitap_adi, yazar, kategori_id, sayfa_sayisi, ozet, kutuphane) VALUES (?)";
   const values = [
     req.body.kitap_adi,
     req.body.yazar,
     req.body.kategori_id,
     req.body.sayfa_sayisi,
     req.body.ozet,
+    req.body.kutuphane, // <-- Yeni alan
   ];
   db.query(sql, [values], (err, data) => {
     if (err) return res.status(500).json(err);
@@ -82,17 +83,18 @@ app.post("/ekle", (req, res) => {
   });
 });
 
-// PUT - Kitap Güncelle (YENİ EKLENEN KISIM)
+// PUT - Kitap Güncelle (KÜTÜPHANE EKLENDİ)
 app.put("/guncelle/:id", (req, res) => {
   const id = req.params.id;
   const sql =
-    "UPDATE kitaplar SET kitap_adi = ?, yazar = ?, kategori_id = ?, sayfa_sayisi = ?, ozet = ? WHERE id = ?";
+    "UPDATE kitaplar SET kitap_adi = ?, yazar = ?, kategori_id = ?, sayfa_sayisi = ?, ozet = ?, kutuphane = ? WHERE id = ?";
   const values = [
     req.body.kitap_adi,
     req.body.yazar,
     req.body.kategori_id,
     req.body.sayfa_sayisi,
     req.body.ozet,
+    req.body.kutuphane, // <-- Yeni alan
     id,
   ];
   db.query(sql, values, (err, result) => {

@@ -5,8 +5,8 @@ import { Link } from "react-router-dom";
 const Home = () => {
   const [kitaplar, setKitaplar] = useState([]);
   const [aramaMetni, setAramaMetni] = useState("");
-  const [secilenKategori, setSecilenKategori] = useState("Tümü"); // Filtre için state
-  const [secilenKitap, setSecilenKitap] = useState(null); // Modal için state
+  const [secilenKategori, setSecilenKategori] = useState("Tümü");
+  const [secilenKitap, setSecilenKitap] = useState(null);
 
   const API_URL = "https://webaplicationdevproject.onrender.com";
 
@@ -23,15 +23,12 @@ const Home = () => {
     }
   };
 
-  // --- FİLTRELEME MANTIĞI ---
   const filtrelenmisKitaplar = kitaplar.filter((kitap) => {
     const metinUyumu =
       kitap.kitap_adi.toLowerCase().includes(aramaMetni.toLowerCase()) ||
       kitap.yazar.toLowerCase().includes(aramaMetni.toLowerCase());
-
     const kategoriUyumu =
       secilenKategori === "Tümü" || kitap.kategori_adi === secilenKategori;
-
     return metinUyumu && kategoriUyumu;
   });
 
@@ -44,26 +41,14 @@ const Home = () => {
           .btn-ieee:hover { background-color: #00629B; color: white; }
           .book-card { border: none; border-left: 5px solid #00629B; transition: transform 0.3s ease, box-shadow 0.3s ease; background-color: #f8f9fa; cursor: pointer; }
           .book-card:hover { transform: translateY(-7px); box-shadow: 0 10px 20px rgba(0, 98, 155, 0.15) !important; background-color: #fff; }
-          
-          /* MODAL STİLLERİ */
-          .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.6); z-index: 1000;
-            display: flex; justify-content: center; align-items: center;
-          }
-          .modal-content-box {
-            background: white; padding: 30px; border-radius: 15px; width: 500px; max-width: 90%;
-            box-shadow: 0 5px 30px rgba(0,0,0,0.3); position: relative;
-            border-top: 10px solid #00629B;
-          }
-          .close-btn {
-            position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #aaa;
-          }
+          .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); z-index: 1000; display: flex; justify-content: center; align-items: center; }
+          .modal-content-box { background: white; padding: 30px; border-radius: 15px; width: 500px; max-width: 90%; box-shadow: 0 5px 30px rgba(0,0,0,0.3); position: relative; border-top: 10px solid #00629B; }
+          .close-btn { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #aaa; }
           .close-btn:hover { color: red; }
         `}
       </style>
 
-      {/* MODAL (Sadece bir kitap seçiliyse görünür) */}
+      {/* --- DETAY MODALI (KÜTÜPHANE BİLGİSİ EKLENDİ) --- */}
       {secilenKitap && (
         <div className="modal-overlay" onClick={() => setSecilenKitap(null)}>
           <div
@@ -77,7 +62,7 @@ const Home = () => {
             <h3 className="ieee-text fw-bold mb-3">{secilenKitap.kitap_adi}</h3>
             <h5 className="text-secondary mb-3">✍️ {secilenKitap.yazar}</h5>
 
-            <div className="d-flex gap-2 mb-4">
+            <div className="d-flex gap-2 mb-3 flex-wrap">
               <span className="badge bg-primary">
                 {secilenKitap.kategori_adi || "Genel"}
               </span>
@@ -88,8 +73,25 @@ const Home = () => {
               </span>
             </div>
 
+            {/* YENİ EKLENEN KISIM: KÜTÜPHANE KONUMU */}
+            <div className="alert alert-light border d-flex align-items-center mb-3">
+              <i
+                className="bi bi-geo-alt-fill text-danger me-2"
+                style={{ fontSize: "1.2rem" }}
+              ></i>
+              <div>
+                <strong className="d-block text-dark">Konum:</strong>
+                <span className="text-muted">
+                  {secilenKitap.kutuphane || "Konum bilgisi girilmemiş."}
+                </span>
+              </div>
+            </div>
+
             <h6 className="fw-bold">Özet:</h6>
-            <p className="text-muted">
+            <p
+              className="text-muted"
+              style={{ maxHeight: "150px", overflowY: "auto" }}
+            >
               {secilenKitap.ozet || "Bu kitap için henüz bir özet girilmemiş."}
             </p>
           </div>
@@ -106,7 +108,7 @@ const Home = () => {
         </Link>
       </div>
 
-      {/* ARAMA VE FİLTRE ALANI */}
+      {/* ARAMA VE FİLTRE */}
       <div className="row justify-content-center mb-5 g-3">
         <div className="col-md-6">
           <input
@@ -118,7 +120,6 @@ const Home = () => {
           />
         </div>
         <div className="col-md-3">
-          {/* KATEGORİ DROPDOWN */}
           <select
             className="form-select form-select-lg shadow-sm"
             value={secilenKategori}
@@ -132,7 +133,7 @@ const Home = () => {
         </div>
       </div>
 
-      {/* KİTAP LİSTESİ */}
+      {/* LİSTE */}
       <div className="row">
         {filtrelenmisKitaplar.length > 0 ? (
           filtrelenmisKitaplar.map((kitap) => (
@@ -147,7 +148,6 @@ const Home = () => {
                     <span className="badge bg-light text-primary border border-primary rounded-pill px-3">
                       {kitap.kategori_adi || "Genel"}
                     </span>
-                    {/* ID ARTIK GİZLİ (Buraya koymadık) */}
                   </div>
                   <h4 className="card-title fw-bold ieee-text mt-3 mb-2">
                     {kitap.kitap_adi}
